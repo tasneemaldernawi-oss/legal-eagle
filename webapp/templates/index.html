@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Legal Eagle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Legal Eagle Logo" width="600"> <br>
+    <input type="text" id="questionInput" placeholder="Enter your question...">
+    <br/><br/>
+    <button id="submitBtn">Submit</button>
+    <div id="answerArea"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

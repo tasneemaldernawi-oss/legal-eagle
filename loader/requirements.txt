@@ -1,0 +1,9 @@
+Flask==2.3.3
+requests==2.31.0
+google-generativeai>=0.2.0
+langchain
+langchain_google_vertexai
+langchain-community
+langchain-google-firestore
+google-cloud-storage
+functions-framework
