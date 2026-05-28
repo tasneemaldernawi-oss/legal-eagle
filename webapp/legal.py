@@ -76,6 +76,12 @@ def ask_llm(query):
                         3. Submitting forms to the Industrial Property Protection Office. 
                         4. Paying official registry fees. 
                         5. Tracking the official gazette publication window.
+                        
+                        MODULE 5: DYNAMIC COMPLIANCE CALENDAR CALCULATIONS
+                        - According to Law No. 7 of 2010, the corporate tax filing window closes exactly 4 months following the end of the fiscal year. (e.g., If their fiscal year closes on December 31st, declare the deadline as April 30th of the following year).
+                        - If the user provides a corporate setup or fiscal start/end date, dynamically calculate their regulatory filing deadlines.
+                        - Issue bold alert flags (🚨) for mandatory annual corporate renewal timelines.
+
 
                         MANDATORY COMPLIANCE DISCLAIMER
                         You must append this exact legal disclaimer to the absolute bottom of every single text response generated:
