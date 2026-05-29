@@ -1,19 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-    <title>Legal Eagle</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Eagle | Better Call Eagle!</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        doc: '#fdfbf7',     /* Parchment paper white */
+                        wood: '#422006',    /* Deep mahogany brown */
+                        leather: '#78350f', /* Classic leather brown */
+                        gold: '#d97706',    /* Legal brass/gold */
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
+<body class="bg-doc h-screen flex flex-col font-sans text-wood">
 
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Legal Eagle Logo" width="600"> <br>
-    <input type="text" id="questionInput" placeholder="Enter your question...">
-    <br/><br/>
-    <button id="submitBtn">Submit</button>
-    <div id="answerArea"></div>
+    <!-- Header -->
+    <header class="bg-leather text-doc p-4 shadow-lg border-b-4 border-gold flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <!-- You can keep your logo here, but for now we use text -->
+            <div class="w-10 h-10 bg-gold rounded-full flex items-center justify-center font-serif font-bold text-xl text-wood">
+                LE
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold font-serif tracking-wide border-l-2 border-gold pl-2 ml-2 block hidden md:inline">Legal Eagle</h1>
+                <h1 class="text-2xl font-bold">النسر القانوني</h1>
+            </div>
+        </div>
+        <div class="text-gold font-serif italic text-lg hidden md:block">
+            "Better Call Eagle!"
+        </div>
+    </header>
+
+    <!-- Chat Area -->
+    <main id="chatWindow" class="flex-1 overflow-y-auto p-4 space-y-6 w-full max-w-4xl mx-auto">
+        
+        <!-- Welcome Message -->
+        <div class="flex flex-col gap-1 items-start">
+            <div class="bg-white border border-gray-200 p-4 rounded-2xl rounded-tr-none shadow-sm max-w-[85%]">
+                <p class="font-bold text-leather mb-1">المستشار القانوني (Legal Eagle)</p>
+                <p>مرحباً بك! أنا مساعدك القانوني الذكي للسوق الليبي.<br>كيف يمكنني مساعدتك اليوم؟ (تأسيس شركات، عقود، علامات تجارية...)</p>
+            </div>
+        </div>
+
+        <div id="answerArea" class="flex flex-col gap-4"></div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="bg-white border-t-2 border-gray-200 p-4">
+        <div class="max-w-4xl mx-auto flex gap-3">
+            <input type="text" id="questionInput" 
+                class="flex-1 border-2 border-gray-300 rounded-xl p-3 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all text-wood bg-doc"
+                placeholder="اكتب استشارتك القانونية هنا... / Type your legal query here...">
+            
+            <button id="submitBtn" 
+                class="bg-gold hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-all flex items-center gap-2">
+                <span>إرسال</span> <!-- Send -->
+            </button>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
-
