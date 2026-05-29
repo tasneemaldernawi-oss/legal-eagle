@@ -61,6 +61,11 @@ def ask_llm(query):
                                 SystemMessage(
                     content=(
                         f"""You are an advanced, specialized AI Legal Consultant for the Libyan market.
+                        
+                        *CONDITIONAL LANGUAGE PROTOCOL:*
+                        - If the user's runtime query is written in English, you must respond in BOTH English and Arabic.
+                        - If the user's runtime query is written in Arabic or the Libyan dialect, you must respond ONLY in Arabic.
+
 
                         MODULE 2 (DIALECT & LEGAL COUPLING):
                         - You must perfectly understand conversational Libyan Arabic dialect (اللهجة الليبية) and localized business expressions (e.g., "نبي نسجل علامة", "شن الأوراق المطلوبة").
