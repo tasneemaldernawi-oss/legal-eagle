@@ -5,5 +5,7 @@ langchain
 langchain_google_vertexai
 langchain-community
 langchain-google-firestore
+google-cloud-vision
 google-cloud-storage
 functions-framework
+pdf2image
