@@ -22,6 +22,9 @@ function appendChatBubble(role, message) {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
+// Global variable holding the client-side extracted text from files (Your feature)
+let extractedFileText = "";
+
 // Bouncing dots loading animation
 function showLoading() {
     const loadingHtml = `
@@ -47,12 +50,31 @@ function hideLoading() {
 
 async function askLegalEagle() {
     const question = questionInput.value.trim();
-    if (!question) return;
+
+      
+    // We allow execution if there's a text query OR if a file has text extracted in the background.
+    
+    if (!question && !extractedFileText.trim() && selectedFiles.length === 0) return;
+
+    // Safely package and combine the texts before wiping the input elements
+    let finalPayloadText = question;
+    let bubbleDisplayMessage = question;
+
+    if (extractedFileText.trim() !== "") {
+        finalPayloadText = `[Uploaded document content for your analysis]\n${extractedFileText}`;
+        if (question) {
+            finalPayloadText += `\n\nUser Query/Notes regarding this document:\n${question}`;
+            bubbleDisplayMessage = `📄 [مستند مرفق] + ملاحظة: ${question}`;
+        } else {
+            bubbleDisplayMessage = `📄 [مستند مرفق للمراجعة والتدقيق القانوني]`;
+        }
+    }
 
     // Hide splash screen on first message
     if (welcomeSplash) welcomeSplash.style.display = 'none';
 
-    appendChatBubble('user', question);
+    // Show the immediate bubble feedback
+    appendChatBubble('user', bubbleDisplayMessage);
     questionInput.value = ''; 
     submitBtn.disabled = true;
     questionInput.disabled = true;
@@ -60,27 +82,29 @@ async function askLegalEagle() {
     showLoading(); // Show fancy loading dots
 
     try {
-        // --- BACKEND DEVELOPER NOTE ---
-        // If files are selected, we send FormData (Multipart) so you can upload to GCP Bucket.
-        // Otherwise, send standard JSON for just the text prompt.
         let fetchOptions = {};
-        
+       
+        /*
+           We still use  Multipart FormData logic so the files stream directly 
+           to  bucket storage. However, we swap 'question' with 'finalPayloadText' which contains 
+           the pre-extracted text layout from the client reader. 
+        */
         if (selectedFiles.length > 0) {
             const formData = new FormData();
-            formData.append('question', question);
+            formData.append('question', finalPayloadText); // Extracted text injected cleanly here!
             selectedFiles.forEach((file, index) => {
-                formData.append('files', file); // Array of files for the backend to upload to bucket
+                formData.append('files', file); // Keeps his array stream for GCP bucket upload intact
             });
             
             fetchOptions = {
                 method: 'POST',
-                body: formData // No Content-Type header needed for FormData; browser sets it automatically with boundary
+                body: formData 
             };
         } else {
             fetchOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: question })
+                body: JSON.stringify({ question: finalPayloadText })
             };
         }
 
@@ -90,8 +114,11 @@ async function askLegalEagle() {
         const markdownText = await response.text();
         const htmlContent = marked.parse(markdownText); 
         
-        hideLoading(); // Remove loading dots
+        hideLoading(); 
         appendChatBubble('ai', htmlContent);
+
+        // State reset upon a completely successful transaction loop
+        clearSelectedFile();
 
     } catch (error) {
         console.error("Error:", error);
@@ -137,12 +164,25 @@ menuToggle.addEventListener('click', openSidebar);
 closeMenu.addEventListener('click', closeSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
 
+
 // File Drag and Drop & Upload UI Logic
 const clipBtn = document.getElementById('clipBtn');
 const fileInput = document.getElementById('fileInput');
 const dropOverlay = document.getElementById('dropOverlay');
 const filePreview = document.getElementById('filePreview');
 let selectedFiles = [];
+
+// Dynamically fetch and attach the standard pdf.js engine scripts in the runtime environment
+if (typeof pdfjsLib === 'undefined') {
+    const pdfScript = document.createElement('script');
+    pdfScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
+    pdfScript.onload = () => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    };
+    document.head.appendChild(pdfScript);
+} else {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+}
 
 // Trigger file input when the clip button is clicked
 clipBtn.addEventListener('click', () => fileInput.click());
@@ -174,7 +214,7 @@ document.addEventListener('dragleave', (e) => {
 });
 
 document.addEventListener('dragover', (e) => {
-    e.preventDefault(); // Crucial for drop to work
+    e.preventDefault(); 
 });
 
 document.addEventListener('drop', (e) => {
@@ -189,7 +229,6 @@ document.addEventListener('drop', (e) => {
 
 function handleFiles(files) {
     Array.from(files).forEach(file => {
-        // Here your colleague can write the upload backend logic
         selectedFiles.push(file);
         
         // Add a visual badge for the file
@@ -197,19 +236,68 @@ function handleFiles(files) {
         fileBadge.className = 'bg-gold/10 text-wood dark:text-doc border border-gold/50 rounded-full px-3 py-1 flex items-center gap-2 max-w-full';
         fileBadge.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            <span class="truncate text-xs font-bold" dir="ltr">${file.name}</span>
+            <span class="truncate text-xs font-bold" id="badgeStatusText_${selectedFiles.length}" dir="ltr">⏳ Processing: ${file.name}...</span>
             <button type="button" class="text-red-500 hover:text-red-700 ml-1 font-bold shrink-0">&times;</button>
         `;
         
-        // Handle file removal from UI
+        // Handle file removal from UI and state array
         fileBadge.querySelector('button').addEventListener('click', () => {
             fileBadge.remove();
             selectedFiles = selectedFiles.filter(f => f !== file);
-            if(selectedFiles.length === 0) filePreview.classList.add('hidden');
+            if(selectedFiles.length === 0) clearSelectedFile();
         });
         
         filePreview.appendChild(fileBadge);
         filePreview.classList.remove('hidden');
         filePreview.classList.add('flex');
+
+        const badgeTextElement = document.getElementById(`badgeStatusText_${selectedFiles.length}`);
+
+        // Extract TXT layout content
+        if (file.name.endsWith('.txt')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                extractedFileText += `\n--- Content of ${file.name} ---\n` + e.target.result;
+                if (badgeTextElement) badgeTextElement.innerText = ` Ready: ${file.name}`;
+            };
+            reader.readAsText(file);
+        } 
+        // Extract PDF layout pages via pdf.js pipeline
+        else if (file.name.endsWith('.pdf')) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const typedarray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let fullText = `\n--- Content of ${file.name} ---\n`;
+                    
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        fullText += pageText + '\n';
+                    }
+                    
+                    extractedFileText += fullText;
+                    if (badgeTextElement) badgeTextElement.innerText = ` Ready: ${file.name} (${pdf.numPages} pgs)`;
+                } catch (error) {
+                    console.error("PDF Parsing error:", error);
+                    if (badgeTextElement) badgeTextElement.innerText = ` Parsing Failed: ${file.name}`;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
     });
+}
+
+// Flush memory arrays and reset placeholders
+function clearSelectedFile() {
+    extractedFileText = "";
+    selectedFiles = [];
+    fileInput.value = "";
+    if (filePreview) {
+        filePreview.innerHTML = '';
+        filePreview.classList.add('hidden');
+    }
+    questionInput.placeholder = "اكتب استشارتك القانونية هنا...";
 }
